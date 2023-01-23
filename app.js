@@ -1,14 +1,40 @@
-//Cargamos el modulo http en el servidor
-const http = require ("http");
-// Seleccionamos el puerto 8000 para evitar conflictos con el Front, puerto 3000
-const PORT = 8000
-// Creamos un servidor http con una funcion callback que gestione los codigos de respuesta
-const server = http.createServer(
-    //require, response (require contiene los detalles de la solicitud y response se utiliza para enviar la respuesta al cliente)
-    (req, res)=> {
-        res.statusCode= 200
-        res.setHeader("Content-type","text/html");
-        res.end("<h1>Hello world!!</h1>")
-    }
-).listen (PORT,() => {console.log(`server running at http://localhost:${PORT}`)})
-//instalar siempre el npx install 
+//Importar los modulos express y mongoose
+const express = require("express");
+const mongoose = require("mongoose");
+mongoose.set("strictQuery", true);
+//Obtener la información el archivo env
+require("dotenv").config();
+//Almacenar la cadena de conexión
+const mongoString = process.env.DATABASE_URL;
+
+//Conectar con la base de datos
+mongoose.connect(mongoString, { useNewUrlParser: true });
+//Guardar la conexión
+const db = mongoose.connection;
+//Verificar si la conexión ha sido exitosa
+db.on("error", (error) => {
+  console.log(error);
+});
+/* Se ejecuta una unica vez, por eso once en lugar de on, 
+cuando se conecta a base de datos, en lugar de en cada petición
+*/
+db.once("connected", () => {
+  console.log("succesfully connected");
+});
+//Recibir una notificación cuando la conexión se haya cerrado
+db.on("disconnected", () => {
+  console.log("mongoose default connection is disconnected");
+});
+//Importación de controladores
+const users = require("./Controller/userController");
+const PORT = 8000;
+//Crear la app
+const app = express();
+//Analizar los archivos json
+app.use(express.json());
+
+app.use("/users", users);
+
+app.listen(PORT, () => {
+  console.log(`server running at http://127.0.0.1:${PORT}`);
+});
